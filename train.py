@@ -2,14 +2,19 @@ import pickle
 import torch
 from torch import nn
 from attention import *
+from string_to_int import string_to_int
 
 def load_data(filename):
     with open(filename, 'rb') as file:
         data = pickle.load(file)
     return data
 
-def load_vocab(human_vocab, inv_machine_vocab, machine_vocab):
-    pass
+# Transforma dados numa representação one-hot.
+def prepare_dataset(dataset, lenght, vocab):
+    n = len(vocab)
+    translation = [string_to_int(data, lenght, vocab) for data in dataset]
+    representation = nn.functional.one_hot(torch.LongTensor(translation), n)
+    return representation
 
 def load_dataset(filename):
     data = load_data(filename)
@@ -20,20 +25,35 @@ def load_dataset(filename):
         output_lang.addWord(d[0])
     return input_lang, output_lang, data
 
-#rnn = nn.LSTMCell(10, 20)  # (input_size, hidden_size)
-#input = torch.randn(2, 3, 10)  # (time_steps, batch, input_size)
-#hx = torch.randn(3, 20)  # (batch, hidden_size)
-#cx = torch.randn(3, 20)
-#output = []
-#for i in range(input.size()[0]):
-#    hx, cx = rnn(input[i], (hx, cx))
-#    output.append(hx)
-#output = torch.stack(output, dim=0)
-#print(input, "\n-----\n", output)
+if __name__ == "__main__":
 
-rnn = nn.LSTM(10, 10, bidirectional=True)
-input = torch.randn(3, 10)
-output, (hn, cn) = rnn(input)
-softmax = nn.Softmax(dim=1)
-output = softmax(output)
-print(output)
+    # Hyperparameters
+
+    epochs = 1
+    learning_rate = 1e-4
+    decay = 1e-3
+    gamma = 0.9
+    lenght = 20
+
+    # Model setup
+
+    vocab = load_data("human_vocab.pkl")
+    file_name = "data.txt"
+    generate_random_numbers_to_file(file_name, 10, 200, interval[0], interval[1])
+    dataset = open("data.txt")
+    
+    device = torch.accelerator.current_accelerator().type if torch.accelerator.is_available() else "cpu"
+    print(f"Using {device} device")
+    model = RNN().to(device)
+    loss_fn = nn.NLLLoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=decay)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 1, gamma=gamma)
+
+    # Training
+
+    for t in range(epochs):
+        print(f"Epoch {t+1}\n-------------------------------")
+        train(dataset, model, loss_fn, optimizer)
+        scheduler.step()
+
+    print("Done!")
