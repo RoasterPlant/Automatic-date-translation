@@ -113,3 +113,24 @@ def train(dataset, model, loss_fn, optimizer):
 
     loss = loss.item()
     print(f"loss: {loss:>7f}")
+
+def test(dataset, model, loss_fn):
+    # Unnecessary in this situation but added for best practices
+    model.eval()
+    test_loss, correct = 0, 0
+    size = len(dataset)
+
+    # Evaluating the model with torch.no_grad() ensures that no gradients are computed during test mode
+    # also serves to reduce unnecessary gradient computations and memory usage for tensors with requires_grad=True
+    with torch.no_grad():
+        for data in dataset:
+            x, y = data
+            
+            # Compute prediction error
+            pred = model(x)
+            test_loss += loss_fn(pred, y).item()
+            correct += (pred.argmax(1) == y).type(torch.float).sum().item()
+
+    test_loss /= size
+    correct /= size
+    print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
