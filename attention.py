@@ -1,5 +1,4 @@
 
-import os
 import torch
 from torch import nn
 
@@ -51,12 +50,15 @@ class DecoderRNN(nn.Module):
         hx = torch.zeros(batch_size, self.ds)
         cx = torch.zeros(batch_size, self.ds)
         prev = torch.zeros(batch_size, self.T_y, self.ds)
+
+        # Loop manual da LSTM pós-atenção.
         for i in range(self.T_y):
             attention_input = torch.cat([hx.repeat(T_x, 1, 1).transpose(0, 1), encoder_outputs], dim=2)
             attention_output = self.attention(attention_input)
             context = torch.sum(torch.mul(encoder_outputs, attention_output), dim=1)
             hx, cx = self.lstm(context, (hx, cx))
             prev[:, i, :] = hx
+
         output = self.linear(prev)
         return output
     
@@ -72,8 +74,6 @@ class RNN(nn.Module):
         return logits
     
 def train(dataloader, model, loss_fn, optimizer):
-    # Set the model to training mode - important for batch normalization and dropout layers
-    # Unnecessary in this situation but added for best practices
     model.train()
     total_loss = 0
     for batch, (X, y) in enumerate(dataloader):
@@ -86,14 +86,10 @@ def train(dataloader, model, loss_fn, optimizer):
         optimizer.step()
         optimizer.zero_grad()
         total_loss += loss.item()
-        #for name, param in model.encoder.lstm.named_parameters():
-        #    print(f"Layer Parameter: {name}")
-        #    print(f"Parameter values:  {param}")
 
     print(f"loss: {total_loss:>7f}")
 
 def test(dataset, model, loss_fn):
-    # Unnecessary in this situation but added for best practices
     model.eval()
     test_loss, correct = 0, 0
     size = len(dataset)
