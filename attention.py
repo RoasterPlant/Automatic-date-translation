@@ -3,21 +3,13 @@ import os
 import torch
 from torch import nn
 
-activations = {
-    "relu": nn.ReLU,
-    "tanh": nn.Tanh,
-}
-
 # Camada intermediária entre o encoder e o decoder.
 class AttentionLayer(nn.Module):
-    def __init__(self, input_size, output_size, activation):
+    def __init__(self, input_size, output_size):
         super().__init__()
-        linear1 = nn.Linear(input_size, input_size)
-        linear2 = nn.Linear(input_size, output_size)
+        linear1 = nn.Linear(input_size, output_size)
         self.stack = nn.Sequential(
             linear1,
-            activations[activation](),
-            linear2,
             nn.Softmax(dim=1)
         )
 
@@ -40,37 +32,39 @@ class EncoderRNN(nn.Module):
         return output
 
 class DecoderRNN(nn.Module):
-    # hidden_size = O dobro do número de componentes da saída do encoder num estado tempo.
-    # output_size = Número de componentes da saída do decoder num estado tempo. Nesse caso, é o tamanho da representação dos caracteres de entrada (11).
+    # enc_hidden_size = O dobro do número de componentes da saída do encoder num estado tempo.
+    # dec_hidden_size = Tamanho da saída do pós-LSTM
+    # output_size = Número de componentes da saída do decoder num estado tempo. Nesse caso, é o tamanho da representação dos caracteres de saída (11).
 
-    def __init__(self, hidden_size, output_size):
+    def __init__(self, enc_hidden_size, dec_hidden_size, output_size):
         super().__init__()
-        self.hs = hidden_size
+        self.es = enc_hidden_size
+        self.ds = dec_hidden_size
         self.os = output_size
         self.T_y = 10 # Tamanho da data padrão.
-        self.attention = AttentionLayer(hidden_size + output_size, 1, activation="relu")
-        self.lstm = nn.LSTMCell(hidden_size, output_size)
-        self.softmax = nn.Softmax(dim=2)
+        self.attention = AttentionLayer(enc_hidden_size + dec_hidden_size, 1)
+        self.lstm = nn.LSTMCell(enc_hidden_size, dec_hidden_size)
+        self.linear = nn.Linear(dec_hidden_size, output_size)
 
     def forward(self, encoder_outputs):
         batch_size, T_x = encoder_outputs.size()[:2]
-        hx = torch.zeros(batch_size, self.os)
-        cx = torch.zeros(batch_size, self.os)
-        output = []
-        for _ in range(self.T_y):
+        hx = torch.zeros(batch_size, self.ds)
+        cx = torch.zeros(batch_size, self.ds)
+        prev = torch.zeros(batch_size, self.T_y, self.ds)
+        for i in range(self.T_y):
             attention_input = torch.cat([hx.repeat(T_x, 1, 1).transpose(0, 1), encoder_outputs], dim=2)
             attention_output = self.attention(attention_input)
             context = torch.sum(torch.mul(encoder_outputs, attention_output), dim=1)
             hx, cx = self.lstm(context, (hx, cx))
-            output.append(hx)
-        output = self.softmax(torch.stack(output, dim=1))
+            prev[:, i, :] = hx
+        output = self.linear(prev)
         return output
     
 class RNN(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size):
+    def __init__(self, input_size, enc_hidden_size, dec_hidden_size, output_size):
         super().__init__()
-        self.encoder = EncoderRNN(input_size, hidden_size)
-        self.decoder = DecoderRNN(2 * hidden_size, output_size)
+        self.encoder = EncoderRNN(input_size, enc_hidden_size)
+        self.decoder = DecoderRNN(2 * enc_hidden_size, dec_hidden_size, output_size)
 
     def forward(self, x):
         x = self.encoder(x)

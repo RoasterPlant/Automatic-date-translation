@@ -9,11 +9,12 @@ if __name__ == "__main__":
     # Hyperparameters
 
     epochs = 80
-    learning_rate = 1e-3
+    learning_rate = 1e-1
     batch_size = 32
-    gamma = 1.0
+    gamma = 0.5
     lenght = 20
-    hidden_size = 32
+    enc_hidden_size = 16
+    dec_hidden_size = 32
 
     # Model setup
 
@@ -25,10 +26,10 @@ if __name__ == "__main__":
     device = torch.accelerator.current_accelerator().type if torch.accelerator.is_available() else "cpu"
     print(f"Using {device} device")
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
-    model = RNN(len(input_vocab), hidden_size, len(output_vocab)).to(device)
+    model = RNN(len(input_vocab), enc_hidden_size, dec_hidden_size, len(output_vocab)).to(device)
     loss_fn = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 1, gamma=gamma)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 5, gamma=gamma)
 
     # Training
 
