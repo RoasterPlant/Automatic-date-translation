@@ -8,6 +8,7 @@ __pycache__/
 
 # Local files / folders
 /model.h5
+/.vscode
 
 # Distribution / packaging
 .Python

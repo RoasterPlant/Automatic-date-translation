@@ -15,7 +15,6 @@ def load_data(filename):
 
 def load_dataset(filename, input_vocab, input_length, output_vocab, output_length=10):
     dataset = load_data(filename)
-    n = len(dataset)
 
     input_lang = torch.LongTensor(
         [string_to_int(data[0], input_length, input_vocab) for data in dataset]
