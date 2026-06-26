@@ -1,5 +1,5 @@
 import torch
-from utils import load_data, load_dataset
+from utils import load_data, load_dataset # Funções para a preparação do dataset
 
 def testar(modelo, arquivo_teste, tamanho=30):
     human_vocab = load_data("human_vocab.pkl")
@@ -14,6 +14,7 @@ def testar(modelo, arquivo_teste, tamanho=30):
     with torch.no_grad():
         pred = modelo(X.float()).argmax(dim=2)
 
+    # Calcula número de predições totalmente corretas.
     acertos = 0
     for i, ((entrada, esperado), y_pred) in enumerate(zip(dados, pred)):
         previsto = "".join(inv_machine_vocab[int(c)] for c in y_pred)
@@ -23,6 +24,6 @@ def testar(modelo, arquivo_teste, tamanho=30):
 
     print(f"\nAcurácia: {acertos}/{len(dados)} = {100*acertos/len(dados):.2f}%")
 
-model = torch.load("attention_model.pth", weights_only=False)
-
-testar(model, "test_dataset.pkl")
+if __name__ == "__main__":
+    model = torch.load("attention_model.pth", weights_only=False)
+    testar(model, "test_dataset.pkl")
