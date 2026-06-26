@@ -9,7 +9,7 @@ class AttentionLayer(nn.Module):
         linear1 = nn.Linear(input_size, output_size)
         self.stack = nn.Sequential(
             linear1,
-            nn.Softmax(dim=1)
+            nn.Softmax(dim=1),
         )
 
     def forward(self, x):
@@ -20,14 +20,12 @@ class EncoderRNN(nn.Module):
     # input_size = Número de componentes de x num estado de tempo. Nesse caso, é o tamanho da representação dos caracteres de entrada (37).
     # hidden_size = Número de componentes da saída num estado tempo.
 
-    def __init__(self, input_size, hidden_size, dropout_p = 0.01):
+    def __init__(self, input_size, hidden_size):
         super().__init__()
         self.lstm = nn.LSTM(input_size, hidden_size, bidirectional=True, batch_first=True)
-        self.dropout = nn.Dropout(dropout_p)
 
     def forward(self, input):
-        droped = self.dropout(input.to(torch.float32))
-        output, hx = self.lstm(droped)
+        output, hx = self.lstm(input.to(torch.float32))
         return output
 
 class DecoderRNN(nn.Module):
@@ -88,23 +86,3 @@ def train(dataloader, model, loss_fn, optimizer):
         total_loss += loss.item()
 
     print(f"loss: {total_loss:>7f}")
-
-def test(dataset, model, loss_fn):
-    model.eval()
-    test_loss, correct = 0, 0
-    size = len(dataset)
-
-    # Evaluating the model with torch.no_grad() ensures that no gradients are computed during test mode
-    # also serves to reduce unnecessary gradient computations and memory usage for tensors with requires_grad=True
-    with torch.no_grad():
-        for data in dataset:
-            x, y = data
-            
-            # Compute prediction error
-            pred = model(x)
-            test_loss += loss_fn(pred, y).item()
-            correct += (pred.argmax(1) == y).type(torch.float).sum().item()
-
-    test_loss /= size
-    correct /= size
-    print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
