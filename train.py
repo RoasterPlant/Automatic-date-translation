@@ -9,9 +9,9 @@ if __name__ == "__main__":
     # Hyperparâmetros
 
     epochs = 50
-    learning_rate = 1e-1
+    learning_rate = 1e-2
     batch_size = 32
-    gamma = 0.5
+    gamma = 0.8
     length = 30
     enc_hidden_size = 16
     dec_hidden_size = 32

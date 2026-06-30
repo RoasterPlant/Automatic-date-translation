@@ -1,7 +1,6 @@
 import pickle
 import torch
 from torch import nn
-from attention import *
 from string_to_int import string_to_int
 from torch.utils.data import TensorDataset
 
@@ -27,3 +26,8 @@ def load_dataset(filename, input_vocab, input_length, output_vocab, output_lengt
     
     dataset = TensorDataset(input_lang, output_lang)
     return input_lang, output_lang, dataset
+
+def get_padding_mask(X):
+    pad_vector = nn.functional.one_hot(torch.zeros((1, ), dtype=torch.long), num_classes=X.size(2))
+    padding_mask = (X == pad_vector).all(dim=-1)
+    return padding_mask

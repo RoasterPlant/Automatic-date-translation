@@ -1,5 +1,5 @@
 import torch
-from utils import load_data, load_dataset # Funções para a preparação do dataset
+from utils import * # Funções para a preparação do dataset
 
 def testar(modelo, arquivo_teste, tamanho=30):
     human_vocab = load_data("human_vocab.pkl")
@@ -8,11 +8,12 @@ def testar(modelo, arquivo_teste, tamanho=30):
 
     dados = load_data(arquivo_teste)
     X, Y, _ = load_dataset(arquivo_teste, human_vocab, tamanho, machine_vocab)
+    padding_mask = get_padding_mask(X)
 
     modelo.eval()
 
     with torch.no_grad():
-        pred = modelo(X.float()).argmax(dim=2)
+        pred = modelo(X, padding_mask)[0].argmax(dim=2)
 
     # Calcula número de predições totalmente corretas.
     acertos = 0

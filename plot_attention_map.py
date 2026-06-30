@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import torch
 from torch import nn
-from utils import load_data
+from utils import load_data, get_padding_mask
 from string_to_int import string_to_int
 
 
@@ -17,6 +17,7 @@ def plot_attention_map(model, input_vocabulary, inv_output_vocabulary, text):
 
     model.eval()
 
+    # Prepara o exemplo
     encoded = torch.LongTensor([
         string_to_int(text, Tx, input_vocabulary)
     ])
@@ -26,11 +27,14 @@ def plot_attention_map(model, input_vocabulary, inv_output_vocabulary, text):
         num_classes=len(input_vocabulary)
     ).float()
 
+    padding_mask = get_padding_mask(encoded)
+
     device = next(model.parameters()).device
     encoded = encoded.to(device)
 
+    # Obtém os pesos de atenção
     with torch.no_grad():
-        prediction, attention_map = model(encoded)
+        prediction, attention_map = model(encoded, padding_mask)
 
     predicted_ids = prediction.argmax(dim=2)[0].cpu()
     predicted_text = int_to_string(predicted_ids, inv_output_vocabulary)
@@ -45,6 +49,7 @@ def plot_attention_map(model, input_vocabulary, inv_output_vocabulary, text):
     input_length = len(text)
     output_length = Ty
 
+    # Plota o mapa de atenção.
     plt.clf()
     f = plt.figure(figsize=(8, 8.5))
     ax = f.add_subplot(1, 1, 1)
@@ -68,16 +73,17 @@ def plot_attention_map(model, input_vocabulary, inv_output_vocabulary, text):
 
     return attention_map
 
-model = torch.load("attention_model.pth", weights_only=False)
+if __name__ == "__main__":
+    model = torch.load("attention_model.pth", weights_only=False)
 
-human_vocab = load_data("human_vocab.pkl")
-inv_machine_vocab = load_data("inv_machine_vocab.pkl")
+    human_vocab = load_data("human_vocab.pkl")
+    inv_machine_vocab = load_data("inv_machine_vocab.pkl")
 
-plot_attention_map(
-    model,
-    human_vocab,
-    inv_machine_vocab,
-    "tuesday december 8 1998" #Exemplo de teste
-)
+    plot_attention_map(
+        model,
+        human_vocab,
+        inv_machine_vocab,
+        "tuesday december 8 1998" # Exemplo de teste
+    )
 
-plt.show()
+    plt.show()
