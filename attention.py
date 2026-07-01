@@ -39,6 +39,10 @@ class DecoderRNN(nn.Module):
     # output_size = Número de componentes da saída do decoder num estado tempo. Nesse caso, é o tamanho da representação dos caracteres de saída (11).
 
     def __init__(self, enc_hidden_size, dec_hidden_size, output_size):
+
+        # IMPORTANTE: O decoder NÃO deve possuir aplicar softmax explícitamente na camada de saída, 
+        # pois ele é implicitamente aplicado pelo nn.CrossEntropyLoss do Pytorch.
+
         super().__init__()
         self.es = enc_hidden_size
         self.ds = dec_hidden_size
